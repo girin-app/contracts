@@ -447,17 +447,4 @@ IProtocolShareReserve
             }
         }
     }
-
-    /**
-     * @dev Returns the underlying asset address for the ltToken
-     * @param ltToken ltToken address
-     * @return asset address of asset
-     */
-    function _getUnderlying(address ltToken) internal view returns (address) {
-        if (ltToken == vXRP) {
-            return WXRP;
-        } else {
-            return LtTokenInterface(ltToken).underlying();
-        }
-    }
 }

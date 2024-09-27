@@ -8,6 +8,9 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
 contract TimeoutOracle is ResilientOracleInterface, Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable {
+
+    event SetOracleEnable(address indexed ltToken, address indexed underlying, bool indexed isEnable);
+
     mapping(address => uint256) public underlyingToPrices;
     mapping(address => bool) public underlyingToEnabled;
     mapping(address => uint256) public underlyingToLastUpdatedAt;
@@ -45,7 +48,7 @@ contract TimeoutOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
         // it is for interface compatibility
     }
 
-    function injectPriceByItToken(address ltToken, uint256 price) onlyPriceInjector external {
+    function injectPriceByLtToken(address ltToken, uint256 price) onlyPriceInjector external {
         address underlying = _getUnderlyingAsset(ltToken);
         require(underlying != address(0), "underlying not found");
 
@@ -58,7 +61,7 @@ contract TimeoutOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
         underlyingToLastUpdatedAt[underlying] = block.timestamp;
     }
 
-    function injectPricesByItToken(address[] memory ltTokens, uint256[]memory price) onlyPriceInjector external {
+    function injectPricesByLtToken(address[] memory ltTokens, uint256[]memory price) onlyPriceInjector external {
         require(ltTokens.length == price.length, "length not match");
         for (uint256 i = 0; i < ltTokens.length; i++) {
             address underlying = _getUnderlyingAsset(ltTokens[i]);
@@ -99,6 +102,7 @@ contract TimeoutOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
         address underlying = _getUnderlyingAsset(ltToken);
         require(underlying != address(0), "underlying not found");
         underlyingToEnabled[underlying] = isEnable;
+        emit SetOracleEnable(ltToken, underlying, isEnable);
     }
 
 
