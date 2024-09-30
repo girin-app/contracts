@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import "./OracleInterface.sol";
-import "./ltTokenInterface.sol";
+import "./LtTokenInterface.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
@@ -28,14 +28,12 @@ contract TimeoutOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
     constructor(){
         _disableInitializers();
     }
-    function initialize(address initialOwner_, address priceInjector_, address nativeMarket_) initializer public {
+    function initialize(address initialOwner_, address priceInjector_) initializer public {
         __Ownable_init();
         transferOwnership(initialOwner_);
         __Pausable_init();
-        nativeMarket = nativeMarket_;
         priceInjector = priceInjector_;
         priceAvailableTime = 3 hours;
-        NATIVE_TOKEN_ADDR = 0xbBbBBBBbbBBBbbbBbbBbbbbBBbBbbbbBbBbbBBbB;
     }
     // for uups
     function _authorizeUpgrade(address) internal override onlyOwner {}
@@ -107,11 +105,7 @@ contract TimeoutOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
 
 
     function _getUnderlyingAsset(address ltToken) internal view notNullAddress(ltToken) returns (address asset) {
-        if (ltToken == nativeMarket) {
-            asset = NATIVE_TOKEN_ADDR;
-        } else {
-            asset = ltTokenInterface(ltToken).underlying();
-        }
+        return LtTokenInterface(ltToken).underlying();
     }
 
     function pause() onlyOwner external {
@@ -124,10 +118,6 @@ contract TimeoutOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
 
     function updatePriceInjector(address _priceInjector) onlyOwner external {
         priceInjector = _priceInjector;
-    }
-
-    function updateNativeMarket(address _nativeMarket) onlyOwner external {
-        nativeMarket = _nativeMarket;
     }
 
     function updatePriceAvailableTime(uint256 _priceAvailableTime) onlyOwner external {

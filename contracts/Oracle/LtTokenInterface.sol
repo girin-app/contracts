@@ -3,7 +3,7 @@ pragma solidity ^0.8.25;
 
 import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
-interface ltTokenInterface is IERC20Metadata {
+interface LtTokenInterface is IERC20Metadata {
     /**
      * @notice Underlying asset for this LtToken
      */
