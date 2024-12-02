@@ -16,14 +16,7 @@ contract TimeoutOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
     mapping(address => uint256) public underlyingToLastUpdatedAt;
     uint256 public priceAvailableTime;
 
-    /// @notice Native market address
-    address public nativeMarket;
-
     address private priceInjector;
-
-    /// @notice Set this as asset address for Native token on each chain.This is the underlying for vBNB (on bsc)
-    /// and can serve as any underlying asset of a market that supports native tokens
-    address public NATIVE_TOKEN_ADDR;
 
     constructor(){
         _disableInitializers();
@@ -39,11 +32,13 @@ contract TimeoutOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
     function _authorizeUpgrade(address) internal override onlyOwner {}
 
     function updatePrice(address ltToken) external {
-        // it is for interface compatibility
+        // 다른 컨트랙트에서 오라클 데이터 업데이트요청에는 아무 행동도 하지않습니다.
+        // 인터페이스 맞추기위해 함수만 남겨놓습니다.
     }
 
     function updateAssetPrice(address asset) external {
-        // it is for interface compatibility
+        // 다른 컨트랙트에서 오라클 데이터 업데이트요청에는 아무 행동도 하지않습니다.
+        // 인터페이스 맞추기위해 함수만 남겨놓습니다.
     }
 
     function injectPriceByLtToken(address ltToken, uint256 price) onlyPriceInjector external {
