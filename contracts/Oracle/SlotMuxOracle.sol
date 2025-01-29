@@ -11,6 +11,9 @@ import "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 contract SlotMuxOracle is ResilientOracleInterface, Initializable, UUPSUpgradeable, OwnableUpgradeable, PausableUpgradeable {
 
     event SetOracleEnable(address indexed ltToken, address indexed underlying, bool indexed isEnable);
+    event OracleInjectorUpdated(address indexed oldInjector, address indexed newInjector);
+    event PriceAvailableTimeUpdated(uint256 indexed oldAvailableTime, uint256 indexed newAvailableTime);
+    event OraclePriceInjected(address[] ltTokens, uint128[] prices);
 
     uint256[] public packedAssetNumberToPrices;
     uint256[] public packedAssetNumberToLastUpdatedAt;
@@ -51,14 +54,14 @@ contract SlotMuxOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
     }
 
 
-    function injectPricesByLtToken(address[] memory ltTokens, uint128[]memory price) onlyPriceInjector external {
-        require(ltTokens.length == price.length, "length not match");
+    function injectPricesByLtToken(address[] memory ltTokens, uint128[]memory prices) onlyPriceInjector external {
+        require(ltTokens.length == prices.length, "length not match");
         for (uint256 i = 0; i < ltTokens.length; i++) {
             address currentLoopUnderlying = _getUnderlyingAsset(ltTokens[i]);
             uint256 currentLoopAssetNumber = _getOrGenerateAssetNumber(currentLoopUnderlying);
             // 마지막 루프는 짝수개가아니므로 어차피 혼자처리
             if (i == ltTokens.length - 1) {
-                _injectPrice(currentLoopAssetNumber, price[i]);
+                _injectPrice(currentLoopAssetNumber, prices[i]);
                 break;
             }
 
@@ -69,14 +72,15 @@ contract SlotMuxOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
             if (currentLoopAssetNumber + 1 == nextLoopAssetNumber && currentLoopAssetNumber % 2 == 0) {
                 _injectContinuousAssetPrice(
                     currentLoopAssetNumber, nextLoopAssetNumber,
-                    price[i], price[i + 1]
+                    prices[i], prices[i + 1]
                 );
                 i++;
                 continue;
             } else {
-                _injectPrice(currentLoopAssetNumber, price[i]);
+                _injectPrice(currentLoopAssetNumber, prices[i]);
             }
         }
+        emit OraclePriceInjected(ltTokens, prices);
     }
 
     function _getOrGenerateAssetNumber(address underlying) internal returns (uint256) {
@@ -97,7 +101,7 @@ contract SlotMuxOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
                 packedPrice = uint256(price) << 128 | uint128(packedAssetNumberToPrices[_assetNumber / 2]);
             } else {
                 packedUpdatedAt = (packedAssetNumberToLastUpdatedAt[_assetNumber / 2] >> 128) << 128 | uint128(block.timestamp);
-                packedPrice = (packedAssetNumberToPrices[_assetNumber / 2] >> 128 ) << 128 | price;
+                packedPrice = (packedAssetNumberToPrices[_assetNumber / 2] >> 128) << 128 | price;
             }
             packedAssetNumberToPrices[_assetNumber / 2] = packedPrice;
             packedAssetNumberToLastUpdatedAt[_assetNumber / 2] = packedUpdatedAt;
@@ -192,11 +196,15 @@ contract SlotMuxOracle is ResilientOracleInterface, Initializable, UUPSUpgradeab
     }
 
     function updatePriceInjector(address _priceInjector) onlyOwner external {
+        address oldPriceInjector = priceInjector;
         priceInjector = _priceInjector;
+        emit OracleInjectorUpdated(oldPriceInjector, _priceInjector);
     }
 
     function updatePriceAvailableTime(uint256 _priceAvailableTime) onlyOwner external {
+        uint256 oldPriceAvailableTime = priceAvailableTime;
         priceAvailableTime = _priceAvailableTime;
+        emit PriceAvailableTimeUpdated(oldPriceAvailableTime, _priceAvailableTime);
     }
 
     modifier notNullAddress(address someone) {
